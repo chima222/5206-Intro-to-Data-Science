@@ -1,0 +1,255 @@
+---
+title: "5206HW8.cm3700"
+author: "Chi.Ma,cm3700"
+date: "12/7/2017"
+output: html_document
+---
+#Q1
+```{r}
+
+n <- 100
+p <- 10
+s <- 3
+set.seed(0)
+x <- matrix(rnorm(n*p), n, p)
+b <- c(-0.7, 0.7, 1, rep(0, p-s))
+y <- x %*% b + rt(n, df=2)
+cors<-apply(x,2,cor,y)
+cors
+order(abs(cors),decreasing = TRUE)
+```
+#Q2
+```{r}
+x_range<-seq(-10,10,length.out = 100)
+plot(x_range,dnorm(x_range),type ="l",ylab = "Density")
+curve(dt(x,df = 3),add = TRUE, col = "purple")
+```
+#Q3
+```{r}
+psi = function(r, c = 1) {
+  return(ifelse(r^2 > c^2, 2*c*abs(r) - c^2, r^2))
+}
+
+huber.loss<-function(beta){
+  sum(psi(y-x%*%beta))
+}
+```
+#Q4
+```{r}
+library("numDeriv")
+#funciton from class
+grad.descent <- function(f, x0, max.iter = 200, step.size = 0.05, stopping.deriv = 0.01, ...) {
+  
+  n    <- length(x0)
+  xmat <- matrix(0, nrow = n, ncol = max.iter)
+  xmat[,1] <- x0
+  
+  for (k in 2:max.iter) {
+    # Calculate the gradient
+    grad.cur <- grad(f, xmat[ ,k-1], ...) 
+    
+    # Should we stop?
+    if (all(abs(grad.cur) < stopping.deriv)) {
+      k <- k-1; break
+    }
+    
+    # Move in the opposite direction of the grad
+    xmat[ ,k] <- xmat[ ,k-1] - step.size * grad.cur
+  }
+  
+  xmat <- xmat[ ,1:k] # Trim
+  return(list(x = xmat[,k], xmat = xmat, k = k))
+}
+
+gd<-grad.descent(huber.loss,rep(0,p),200,0.001,0.1)
+```
+
+```{r}
+#final estimates
+gd$x
+```
+
+```{r}
+#number of iterations
+```
+#Q5
+```{r}
+obj<-apply(gd$xmat[,1:gd$k],2,huber.loss)
+plot(1:gd$k,obj,xlab = "Iteration",ylab = "Objective Function",type = "l")
+```
+
+```{r}
+#The objective function decreases sharply from nearly 300 to 220 in the first 40 iteration. Then the progress slows down and the decreases become smaller.
+```
+
+#Q6
+```{r}
+gd2<-grad.descent(huber.loss, rep(0,p),200,0.1,0.1)
+```
+
+```{r}
+gd2$x
+```
+
+```{r}
+gd2$k
+```
+
+```{r}
+obj<-apply(gd2$xmat[,1:gd2$k],2,huber.loss)
+plot((gd2$k-49):gd2$k, obj[(gd2$k-49):gd2$k],xlab = "Iteration Number",ylab = "Objective Function",type = "l")
+```
+
+```{r}
+#The gradient descent is oscilatting rather than decreasing like the previous one. The estimates seems to be bouncing back and forth around 3000 and 1000
+```
+#Q7
+```{r}
+gd$x
+```
+
+```{r}
+b
+```
+
+```{r}
+sparse.grad.descent<- function(f, x0, max.iter = 200, step.size = 0.05, stopping.deriv = 0.01, ...) {
+  
+  n    <- length(x0)
+  xmat <- matrix(0, nrow = n, ncol = max.iter)
+  xmat[,1] <- x0
+  
+  for (k in 2:max.iter) {
+    # Calculate the gradient
+    grad.cur <- grad(f, xmat[ ,k-1], ...) 
+    
+    # Should we stop?
+    if (all(abs(grad.cur) < stopping.deriv)) {
+      k <- k-1; break
+    }
+    
+    # Move in the opposite direction of the grad and threshold
+    update                     <- xmat[ ,k-1] - step.size * grad.cur
+    update[abs(update) < 0.05] <- 0
+    xmat[ ,k]                  <- update
+  }
+  
+  xmat <- xmat[ ,1:k] # Trim
+  return(list(x = xmat[,k], xmat = xmat, k = k))
+}
+
+gd.sparse<-sparse.grad.descent(huber.loss,rep(0,p),200,0.001,0.1)
+
+
+```
+
+```{r}
+#estimates
+gd.sparse$x
+```
+
+```{r}
+#iterations
+gd.sparse$k
+```
+#Q8
+```{r}
+lm<-lm(y~-1+x)
+lm$coef
+
+```
+
+```{r}
+gd$x
+```
+
+```{r}
+gd.sparse$x
+```
+
+```{r}
+#result from lm is closer to the regular gd function.
+```
+
+```{r}
+mse<-function(beta){
+  mean((b-beta)^2)
+}
+mse(lm$coef)
+```
+
+```{r}
+mse(gd$x)
+```
+
+```{r}
+mse(gd.sparse$x)
+```
+
+```{r}
+#sparse gd has the smallest mse
+```
+#Q9
+```{r}
+set.seed(10)
+y = x %*% b + rt(n, df=2)
+gd<-grad.descent(huber.loss,rep(0,p),200,0.001,0.1)
+gd$x
+```
+
+```{r}
+gd$k
+```
+
+```{r}
+gd.sparse<-sparse.grad.descent(huber.loss,rep(0,p),200,0.001,0.1)
+gd.sparse$x
+```
+
+```{r}
+gd.sparse$k
+```
+
+```{r}
+mse(gd$x)
+```
+
+```{r}
+mse(gd.sparse$x)
+```
+
+```{r}
+#Regular gd estimate has the smallest MSE. This shows a high variability in sparse estimate.
+```
+
+```{r}
+
+gd.MSE<-rep(NA,10)
+sparse.gd.MSE<-rep(NA,10)
+for (i in 1:10) {
+  y<-x%*%b + rt(n,df=2)
+  gd<-grad.descent(huber.loss,x0 = rep(0,p),200,0.001,0.1)
+  gd.sparse<- sparse.grad.descent(huber.loss, rep(0,p), 200, 0.001, 0.1)
+  gd.MSE[i]<-mse(gd$x)
+  sparse.gd.MSE[i]<-mse(gd.sparse$x)
+  
+}
+mean(gd.MSE)
+```
+
+```{r}
+mean(sparse.gd.MSE)
+```
+
+```{r}
+min(gd.MSE)
+min(sparse.gd.MSE)
+```
+
+```{r}
+#regular gd has a smaller mean but sparse has a much smaller minimum.
+#yes, this proves that sparse has a high variance
+```
+
+
+

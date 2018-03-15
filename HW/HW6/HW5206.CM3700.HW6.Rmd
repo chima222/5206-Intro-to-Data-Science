@@ -1,0 +1,250 @@
+---
+title: "5206.HW6.CM3700"
+author: "Chi.Ma,cm3700"
+date: "11/16/2017"
+output: html_document
+---
+
+```{r}
+setwd("~/Desktop/5206/HW")
+set.seed(0)
+```
+#Problem1: Inverse Transformation Method
+#Part1
+```{r}
+#x=tan(pi(u-1/2)
+```
+
+#Part2
+```{r}
+#set.seed(0)
+f.inverse<-function(x){
+  return(ifelse((x<0|x>1),NA,tan(pi*(x-0.5))))
+}
+cauchy.sim<-function(n){
+  u<-runif(n)
+  return(f.inverse(u))
+}
+
+cauchy.sim(10)
+```
+#Part3
+```{r}
+set.seed(0)
+cauchy.draws<-cauchy.sim(1000)
+cauchy.draws<-cauchy.draws[which(abs(cauchy.draws)<5)]
+hist(cauchy.draws,prob = TRUE,breaks = 15)
+x<-seq(-10,10,0.01)
+lines(x,(1/pi)*(1/(1+x^2)),col="red")
+
+
+```
+#Problem 2: Reject-Accept Method
+#part4
+```{r}
+
+f<-function(x){
+  return(ifelse((x< -1|x>2),0,(1/9)*(4-x^2)))
+}
+x<-seq(-3,3,length.out = 1000)
+plot(x,f(x),ylab = "f(x)",type = "l")
+```
+#part5
+```{r}
+x.max<-0
+f.max<-f(0)
+e<-function(x){
+  return(ifelse((x< -1|x>2),Inf,f.max))
+}
+
+```
+#part6
+```{r}
+n.samps<-10000
+n<- 0
+f.draws<-numeric(n.samps) 
+while (n<n.samps){
+  y<-runif(1,-1,2)
+  u<-runif(1)
+  if(u < f(y)/e(y)){
+    n <- n+1
+    f.draws[n]<- y
+  }
+}
+```
+#Part7
+```{r}
+x<-seq(-1,2,length = 1000)
+hist(f.draws,prob = TRUE,ylab = "f(x)",xlab = "x",main = "Histogram of draws")
+lines(x,f(x),col= "red")
+```
+
+#Part8
+```{r}
+f3<-function(x){
+  return(exp(-0.5*x^2)/sqrt(2*pi))
+}
+x<-seq(-5,5,length=100)
+plot(x,f3(x),xlab = "x",ylab = "f3(x)",type = "l")
+
+```
+#Part9
+```{r}
+e2<-function(x,alpha){
+  return((1/(pi*(1+x^2)))/(alpha))
+}
+
+```
+#Part 10
+```{r}
+#For "Good" Value alpha, alpha is the largest number that satisfies: g(x)/alpha-f(x)>0, therefore, alpha = 0.6577
+x<-seq(-10,10,length.out = 1000)
+plot(x,f3(x),type = "l",ylim = c(0,0.7),xlab = "x",ylab = "f(x)")
+lines(x,e2(x,0.6577),col="red")
+```
+#Part11
+```{r}
+normal.sim<-function(n){
+  n.samps<-0
+  draws<-numeric(n)
+  while(n.samps<n){
+    y<-cauchy.sim(1)
+    u<-runif(1)
+    if(u<f3(y)/e2(y,0.6775)){
+      n.samps<-n.samps+1
+      draws[n.samps]<- y
+    }
+  }
+  return(draws)
+}
+#set.seed(0)
+normal.sim(10)
+```
+#Part12
+```{r}
+#set.seed(0)
+normal.draws<-normal.sim(10000)
+x<-seq(-10,10,length.out = 1000)
+hist(normal.draws,probability = TRUE,xlab="x",ylab = "f(x)", main = "Histogram of Normal Draws")
+lines(x,f3(x),col="red")
+
+```
+#Problem 3: Simulation with built-in R function
+#Part13
+```{r}
+
+x.vals<-5
+i<-1
+while (x.vals[i] >= 0) {
+  r<-runif(1,-2,1)
+  x.vals[i+1]<- x.vals[i]+r
+  i<-i+1
+}
+x.vals
+
+```
+#Part14
+```{r}
+
+plot(1:length(x.vals)-1,x.vals,type = "o",xlab = "Iteration",ylab = "Random Walk")
+```
+#Part15
+```{r}
+random.walk<-function(x.start=5,plot.walk = TRUE){
+  i<-1
+  x.vals<-x.start
+  while (x.vals[i]>0) {
+    
+    r<-runif(1,-2,1)
+    x.vals[i+1]<-x.vals[i]+r
+    i<-i+1
+  }
+  if(plot.walk){
+    plot(1:length(x.vals)-1,x.vals,type = "o",xlab = "Iteration",ylab = "Random Walk")
+  }
+  num.steps<-as.numeric(i-1)
+  return(list(x.vals=x.vals,num.steps=num.steps))
+}
+
+```
+
+```{r}
+random.walk()
+random.walk()
+```
+
+```{r}
+random.walk(10,FALSE)
+random.walk(10,FALSE)
+
+```
+#Part16
+```{r}
+tenthousand<-data.frame(replicate(10000,random.walk(5,FALSE)))
+new.set<-list()
+for (j in 1:10000) {
+  new.set[j]<-tenthousand[2,j]
+}
+mean.set<-mean(as.numeric(new.set))
+mean.set
+```
+#Part17
+```{r}
+random.walk<-function(x.start=5,plot.walk = TRUE,seed=NULL){
+  i<-1
+  x.vals<-x.start
+  set.seed(seed)
+  while (x.vals[i]>0) {
+    
+    r<-runif(1,-2,1)
+    x.vals[i+1]<-x.vals[i]+r
+    i<-i+1
+  }
+  if(plot.walk){
+    plot(1:length(x.vals)-1,x.vals,type = "o",xlab = "Iteration",ylab = "Random Walk")
+  }
+  num.steps<-as.numeric(i-1)
+  return(list(x.vals=x.vals,num.steps=num.steps))
+}
+```
+
+```{r}
+random.walk()
+random.walk()
+```
+
+```{r}
+random.walk(5,FALSE,seed=33)
+random.walk(5,FALSE,seed=33)
+```
+#Problem 4:Monte Carlo Intergration
+#Part18
+
+```{r}
+g <- function(x) {
+       return(sqrt(1-x^2))
+     }
+     plot(seq(0,1,.01),g(seq(0,1,.01)),type="l",col="purple")
+
+```
+#Part19
+```{r}
+area<-1/4*(pi*1^2)
+area
+```
+```{r}
+pi
+```
+#Part20
+```{r}
+#uniform(0,1)
+
+g.over.p<-function(x,b,a){
+  return(sqrt(1-x^2)/(1/(b-a)))
+}
+mean(g.over.p(runif(100000),1,0))#MC estimate area under uniform(0,1)
+```
+
+```{r}
+4*mean(g.over.p(runif(100000),1,0))#MC estimate pi
+```

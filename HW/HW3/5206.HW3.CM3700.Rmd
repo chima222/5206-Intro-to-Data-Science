@@ -1,0 +1,88 @@
+---
+title: "5206 HW3"
+author: "Chi.Ma,cm3700"
+date: "10/11/2017"
+output: html_document
+---
+
+
+i. Open the link http://www.espn.com/nba/team/schedule/_/name/BKN/seasontype/ 2. Display the source code and copy and paste this code into a text editor. Then save the file as NetsSchedule1718 using a .html extension. Once the file is saved, check that you can open the file and it displays the 2017-2018 Brooklyn Nets Regular Season Schedule.
+
+```{r}
+rm(list = ls())
+setwd("~/Desktop/5206/HW")
+nets1718<-readLines("NetsSchedule1718.html",warn = FALSE)
+```
+a. How many lines are in the NetsSchedule17to18.html file? 
+```{r}
+# #lines = 829
+```
+
+b. What is the total number of characters in the file?
+```{r}
+sum(nchar(nets1718))
+```
+c. What is the maximum number of characters in a single line of the file?
+```{r}
+max(nchar(nets1718))
+```
+iii. Open NetsSchedule1718.html as a webpage. This should happen if you simply click on the file. You should see a table listing all the games scheduled for the 2017-2018 NBA season. There are a total of 82 regular season games scheduled. Who and when are they playing first? Who and when are they playing last?
+```{r}
+# first game: Wed, Oct 18 vs Indian, 7:00PM ET
+# last game: Wed, Apr 11 vs Boston, 8:00PM ET
+```
+
+iv. Open NetsSchedule1718.html using your browser and again look at its source code. What line in the file holds information about the first game of the regular season (date, time, opponent)? What line provides the date, time, and opponent for the final game? It may be helpful to use CTRL-F or COMMAND-F here and also work between the file in R and in the text editor.
+```{r}
+# First game: Line 321
+#<div class="mod-page-tabs mod-thirdnav-tabs" style="padding-top: 3px;"><ul class="ui-tabs"><li class="shiftleft"><a href="//www.espn.com/nba/team/schedule/_/name/BKN">Preseason</a></li><li class="active"><a href="//www.espn.com/nba/team/schedule/_/name/BKN/seasontype/2">Regular</a></li></ul></div><div class="mod-container mod-table mod-no-header-footer"><div class="mod-content"><table cellspacing="1" cellpadding="3" class="tablehead"><tr class="stathead"><td colspan="9">2018 Regular Season Schedule</td></tr><tr class="colhead"><td>OCTOBER</td><td>OPPONENT</td><td>TIME (ET)</td><td style="text-align:center;">TV</td><td colspan="4">TICKETS</td></tr><tr class="oddrow team-46-11"><td>Wed, Oct 18</td><td><ul class="game-schedule"><li class="game-status">@</li><li class="team-logo-small logo-nba-small"><a href="http://www.espn.com/nba/team/_/name/ind/indiana-pacers"><img src="http://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/scoreboard/Ind.png&h=80&w=80"></a></li><li class="team-name"><a href="http://www.espn.com/nba/team/_/name/ind/indiana-pacers">Indiana</a></li></ul></td><td>7:00 PM</td><td style="text-align:center;">&nbsp;</td>
+# Last game: Line 421
+#<td colspan="4"><a name="&lpos=nba:team:schedule:tickets" href="https://www.vividseats.com/nba-basketball/brooklyn-nets-tickets/nets-vs-bulls-4-9-2431213.html?wsUser=717">3,454 available from $24</a></td></tr><tr class="evenrow team-46-2"><td>Wed, Apr 11</td><td><ul class="game-schedule"><li class="game-status">@</li><li class="team-logo-small logo-nba-small"><a href="http://www.espn.com/nba/team/_/name/bos/boston-celtics"><img src="http://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/scoreboard/Bos.png&h=80&w=80"></a></li><li class="team-name"><a href="http://www.espn.com/nba/team/_/name/bos/boston-celtics">Boston</a></li></ul></td><td>8:00 PM</td><td style="text-align:center;">&nbsp;</td>
+```
+Using NetsSchedule1718.html we’d like to extract the following variables: the date, the game time (ET), the opponent, and whether the game is home or away. Looking at the file in the text editor, locate each of these variables. For the next part of the homework we use regular expressions to extract this information.
+
+iv. Write a regular expression that will capture the date of the game. Then using the grep() function find the lines in the file that correspond to the games. Make sure that grep() finds 82 lines, and the first and last locations grep() finds match the first and last games you found in (ii).
+```{r}
+date.express<-"[a-zA-Z]*\\,\\s[a-zA-Z]*\\s[0-9]{1,2}"
+grep(nets1718, pattern = date.express)
+
+```
+
+v. Using the expression you wrote in (iv) along with the functions regexp() and regmatches(), extract the dates from the text file. Store this information in a vector called date to save to use below. HINT: We did something like this in class.
+```{r}
+date<-regmatches(nets1718, regexpr(pattern = date.express, nets1718))
+date
+```
+
+vi. Use the same strategy as in (v) and (vi) to create a time vector that stores the time of the game.
+```{r}
+time.express<-"[0-9]+\\:[0-9]+\\s[A-Z]{2}"
+time<-regmatches(nets1718,regexpr(time.express,nets1718))
+time
+```
+
+vii. We would now like to gather information about whether the game is home or away. This information is indicated in the schedule by either an ‘@’ or a ‘vs’ in front of the opponent. If the Nets are playing ‘@’ their opponent’s court, the game is away. If the Nets are playing ‘vs’ the opponent, the game is at home.
+Capture this information using a regular expression. You may want to use the HTML code around these values to guide your search. Then extract this information and use it to create a vector called home which takes the value 1 if the game is played at home or 0 if it is away.
+HINT:In my solution,I use the fact that in each line,the string <li class= "game-status "> appears before this information. So my regular expression searches for that string followed by ‘@’ or that string followed by ‘vs’. After I’ve extracted these strings, I use substr() to finally extract just the ‘@’ or the ‘vs’.
+```{r}
+games<-"li class=\"game-status\">[@|vs]"
+rgames<-substring(text =regmatches(nets1718, regexpr(games,nets1718)),first = 24,last = 24)
+home<-gsub("@",0,rgames)
+home<-gsub("v",1,home)
+home
+```
+viii. Finally we would like to find the opponent, again capture this information using a regular expression. Extract these values and save them to a vector called opponent. Again, to write your regular expression you may want to use the HTML code around the names to guide your search.
+```{r}
+oppo<-">[A-Z][[:punct:][:space:]a-zA-Z]+</a></li></ul></td>"
+roppo<-regmatches(nets1718,regexpr(oppo,nets1718))
+opponent<-substring(text =roppo, first =2,last = nchar(roppo)-19)
+opponent
+```
+
+ix. Construct a data frame of the four variables in the following order: date, time, opponent, home. Print the frame from rows 1 to 10 Does the data match the first 10 games as seen from the web browser?
+```{r}
+schedule<-data.frame(date,time,opponent,home)
+head(schedule,10)
+```
+
+

@@ -1,0 +1,157 @@
+---
+title: "HW2"
+author: "Chi.Ma,cm3700"
+date: "9/29/2017"
+output: html_document
+---
+
+```{r}
+setwd('~/Desktop/5206/HW')
+```
+Your homework should be submitted on Canvas as an R Markdown file. Please submit both the .Rmd and .pdf files (or .html). Please clearly label the questions in your responses and support your answers by textual explanations and the code you use to produce the result. Note that you cannot answer the questions by observing the data in the “Environment” section of RStudio or in Excel – you must use coded commands.
+Goals: data cleaning, EDA, R graphics, more practice with filtering and vectorized com- mands.
+The data set NYChousing.csv contains property-level data on privately-owned, subsidized rental properties in New York City collected by the Furman Center. The data can be found here: http://www.furmancenter.org/data/. The dataset contains financial and physical information on the properties including geographic, subsidy, ownership, physical, and financial information.
+
+## Part 1: Loading and Cleaning the Data in R
+i. Load the data into a dataframe called housing.
+```{r}
+raw_data<-read.csv('NYChousing.csv',header = TRUE, as.is = TRUE)
+housing<-data.frame(raw_data)
+```
+ii. How many rows and columns does the dataframe have?
+```{r}
+dim(housing)
+```
+```{r}
+# No.rows = 2506; No.colums = 22
+```
+iii. Run this command, and explain, in words, what this does:
+apply(is.na(housing), 2, sum).
+```{r}
+apply(is.na(housing),2,sum)
+```
+```{r}
+# the underline code is used to calculate the sum of the NA values.
+# In this case, the datafram housing has NA Values in:
+# 5 = "StartAffordabilityRestrictions"
+# 15 = "Lon"
+# 15 = "Lat"
+# 52 = "Value"
+# 1873 = "REACNumber"
+# 10 = "CityCouncilDistrict"
+# The total numbers of NA is: 1970
+```
+iv. Remove the rows of the dataset for which the variable Value is NA.
+```{r}
+housing_subset<-housing[is.na(housing$Value)==FALSE,]
+```
+
+v. How many rows did you remove with the previous call? Does this agree with your result from (iii)?
+```{r}
+nrow(housing)-nrow(housing_subset)
+```
+```{r}
+# 52 rolls. This does not agree with my result from (iii) because in Q4 I only removed the properties that have NA values in 'Value' variable. In Q3, the results includes all NA values in all variables.
+
+```
+vi. Create a new variable in the dataset called logValue that is equal to the logarithm of the property’s Value. What are the minimum, median, mean, and maximum values of logValue?
+```{r}
+housing_subset$logValue<-log(housing_subset$Value)
+summary(housing_subset$logValue)
+```
+```{r}
+# min=8.41; median = 13.75; mean = 13.68; max = 20.47
+```
+vii. Create a new variable in the dataset called logUnits that is equal to the logarithm of the number of units in the property. The number of units in each piece of property is stored in the variable UnitCount.
+```{r}
+housing_subset$logUnits<-log(housing_subset$UnitCount)
+
+```
+viii. Finally create a new variable in the dataset called after1950 which equals TRUE if the property was built in or after 1950 and FALSE otherwise. You’ll want to use the YearBuilt variable here. This can be done in a single line of code.
+```{r}
+housing_subset$after1950<-ifelse(housing_subset$YearBuilt>=1950,"TRUE","FALSE")
+```
+
+## Part 2: EDA
+The column Borough contains the Borough of each property and is one of either Bronx, Manhattan, Staten Island, Brooklyn, or Queens.
+
+i. Plot property logValue against property logUnits. Name the x and y labels of the plot appropriately. logValue should be on the y-axis.
+```{r}
+plot(housing_subset$logUnits,housing_subset$logValue,xlab = "logUnits",ylab = "logValue")
+```
+ii. Make the same plot as above,but now include the argument col = factor(housing$after1950). Describe this plot and the covariation between the two variables. What does the coloring in the plot tell us?
+Hint: legend("bottomright", legend = levels(factor(housing$after1950)), fill = unique(factor(housing$after1950))).
+```{r}
+plot(housing_subset$logUnits,housing_subset$logValue,xlab = "logUnits",ylab = "logValue",col = factor(housing_subset$after1950))
+legend("bottomright", legend = c("Before 1950","In or After 1950"), fill = unique(factor(housing_subset$after1950)))
+
+```
+```{r}
+#Houses that built in or after 1950 are now red labeled and differentiated from the others.The graph also shows that the units and housing price is positive correlated. In general,the more units a house has, the higher price it is.
+
+#The plot shows that the covariance between the two variables are positive
+
+#The coloring tells us that the price of the house is positive correlated with the yearbuild and units it has. In general, a newer house will have higher price.
+```
+iii. The cor() function calculates the correlation coefficient between two variables. What is the correlation between property logValue and property logUnits in (i) the whole data, (ii) just Manhattan (iii) just Brooklyn (iv) for properties built after 1950 (v) for properties built before 1950?
+```{r}
+cor(housing_subset$logValue,housing_subset$logUnits)
+```
+
+```{r}
+cor(housing_subset[housing_subset$Borough == "Manhattan","logValue"],housing_subset[housing_subset$Borough == "Manhattan","logUnits"])
+```
+
+```{r}
+cor(housing_subset[housing_subset$Borough == "Brooklyn","logValue"],housing_subset[housing_subset$Borough == "Brooklyn","logUnits"])
+```
+
+```{r}
+cor(housing_subset[housing_subset$after1950 == "TRUE","logValue"], housing_subset[housing_subset$after1950 == "TRUE","logUnits"])
+```
+
+```{r}
+cor(housing_subset[housing_subset$after1950 == "FALSE","logValue"],housing_subset[housing_subset$after1950 == "FALSE","logUnits"])
+```
+```{r}
+# Cor1: 0.8727348; Cor2: 0.8830348; Cor3: 0.9102601; Cor4: 0.721735; Cor5: 0.8643297
+```
+iv. Make a single plot showing property logValue against property logUnits for Manhattan and Brooklyn. When creating this plot, clearly distinguish the two boroughs.
+```{r}
+Manbrook<-housing_subset[housing_subset$Borough == "Manhattan"|housing_subset$Borough == "Brooklyn",]
+plot(Manbrook$logUnits,Manbrook$logValue,col=as.factor(Manbrook$Borough))
+legend("bottomright", legend = levels(factor(Manbrook$Borough)), fill = 1:length(unique(factor(Manbrook$Borough))))
+```
+
+v. Consider the following block of code. Give a single line of R code which gives the same final answer as the block of code. There are a few ways to do this.
+
+```{r}
+    manhat.props <- c()
+    for (props in 1:nrow(housing)) {
+      if (housing$Borough[props] == "Manhattan") {
+        manhat.props <- c(manhat.props, props)
+      }
+}
+    med.value <- c()
+    for (props in manhat.props) {
+      med.value <- c(med.value, housing$Value[props])
+    }
+    med.value <- median(med.value, na.rm = TRUE)
+``` 
+
+```{r}
+median(housing_subset$Value[housing_subset$Borough=="Manhattan"],na.rm=TRUE)
+```
+    
+
+vi. Make side-by-side box plots comparing property logValue across the five boroughs.
+```{r}
+boxplot(housing_subset$logValue~housing_subset$Borough,xlab="Borough",ylab="logValue")
+title("Boxplot of Five Districts")
+```
+
+
+vii. For five boroughs, what are the median property values? (Use Value here, not logValue.)
+```{r}
+tapply(housing_subset$Value,housing_subset$Borough,median)
+```
