@@ -16,7 +16,7 @@ HW7:More about simulations
 
 HW8:Optimization for Linear Regression: Huber Loss, Grad.Descent
     
-HW9:Tiddyverse GGplot
+HW9:Tiddyverse ggplot2
 
 # Lab
 Lab1: Normal Distribution
